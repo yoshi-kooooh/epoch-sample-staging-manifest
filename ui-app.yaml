@@ -1,0 +1,64 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: ui-app
+spec:
+  selector:
+    matchLabels:
+      name: ui-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: ui-app
+    spec:
+      containers:
+      - name: ui-app
+        image: exastro/epochsampleappui:master.20210708183910
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+  strategy:
+    blueGreen:
+      activeService: ui-app-bluegreen-active
+      previewService: ui-app-bluegreen-preview
+      autoPromotionEnabled: true
+      scaleDownDelaySeconds: 120
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-app-bluegreen-active
+  labels:
+    name: ui-app-bluegreen-active
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 8000
+    protocol: TCP
+    targetPort: 8000
+    nodePort: 31001
+  selector:
+    name: ui-app
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-app-bluegreen-preview
+  labels:
+    name: ui-app-bluegreen-preview
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 8000
+    protocol: TCP
+    targetPort: 8000
+    nodePort: 32001
+  selector:
+    name: ui-app
